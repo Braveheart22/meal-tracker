@@ -1,0 +1,45 @@
+"use server";
+
+import { z } from "zod";
+import { addMeal, addFoodItemToMeal } from "@/data/meals";
+import { revalidatePath } from "next/cache";
+
+const foodItemSchema = z.object({
+  name: z.string().min(1),
+  quantity: z.number().positive(),
+  unit: z.string().min(1),
+  calories: z.number().nonnegative().nullable(),
+  protein: z.number().nonnegative().nullable(),
+  carbs: z.number().nonnegative().nullable(),
+  fat: z.number().nonnegative().nullable(),
+});
+
+const createMealSchema = z.object({
+  name: z.string().min(1),
+  loggedAt: z.string().min(1),
+  foodItems: z.array(foodItemSchema).min(1, "Add at least one food item"),
+});
+
+export type CreateMealInput = z.infer<typeof createMealSchema>;
+
+export type CreateMealResult =
+  | { ok: true; redirectTo: string }
+  | { ok: false; error: string };
+
+export async function createMealAction(data: CreateMealInput): Promise<CreateMealResult> {
+  try {
+    const parsed = createMealSchema.parse(data);
+
+    const meal = await addMeal({ name: parsed.name, loggedAt: new Date(parsed.loggedAt + "Z") });
+
+    for (const item of parsed.foodItems) {
+      await addFoodItemToMeal(meal.id, item);
+    }
+
+    revalidatePath("/dashboard");
+    return { ok: true, redirectTo: `/dashboard?date=${parsed.loggedAt.split("T")[0]}` };
+  } catch (err) {
+    console.error("[createMealAction]", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
