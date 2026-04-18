@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { getMealsForDate } from "@/data/meals";
 import { MealList } from "./MealList";
+import { Button } from "@/components/ui/button";
 
 interface DashboardPageProps {
   searchParams: Promise<{ date?: string }>;
@@ -18,9 +20,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-2xl space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Meal Tracker</h1>
-          <p className="text-sm text-muted-foreground">View your meals for any day.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Meal Tracker</h1>
+            <p className="text-sm text-muted-foreground">View your meals for any day.</p>
+          </div>
+          <Button asChild>
+            <Link href="/dashboard/meals/new">Log New Meal</Link>
+          </Button>
         </div>
         <MealList meals={meals} selectedDate={dateStr} />
       </div>

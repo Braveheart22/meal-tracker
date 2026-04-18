@@ -186,9 +186,7 @@ export async function addFoodItemToMeal(
   const [meal] = await db.select().from(meals).where(and(eq(meals.id, mealId), eq(meals.userId, userId)));
   if (!meal) throw new Error("Meal not found");
 
-  return db.transaction(async (tx) => {
-    const [foodItem] = await tx.insert(foodItems).values({ ...item, mealId }).returning({ id: foodItems.id });
-    await tx.insert(mealFoodItems).values({ mealId, foodItemId: foodItem.id, quantity: item.quantity });
-    return foodItem;
-  });
+  const [foodItem] = await db.insert(foodItems).values({ ...item, mealId }).returning({ id: foodItems.id });
+  await db.insert(mealFoodItems).values({ mealId, foodItemId: foodItem.id, quantity: item.quantity });
+  return foodItem;
 }
