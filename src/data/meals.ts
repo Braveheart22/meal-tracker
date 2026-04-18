@@ -190,3 +190,20 @@ export async function addFoodItemToMeal(
   await db.insert(mealFoodItems).values({ mealId, foodItemId: foodItem.id, quantity: item.quantity });
   return foodItem;
 }
+
+export async function deleteFoodItemFromMeal(mealId: string, foodItemId: string): Promise<void> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated");
+
+  const [meal] = await db.select().from(meals).where(and(eq(meals.id, mealId), eq(meals.userId, userId)));
+  if (!meal) throw new Error("Meal not found");
+
+  await db.delete(foodItems).where(and(eq(foodItems.id, foodItemId), eq(foodItems.mealId, mealId)));
+}
+
+export async function updateMealMeta(mealId: string, data: { name: string; loggedAt: Date }): Promise<void> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated");
+
+  await db.update(meals).set(data).where(and(eq(meals.id, mealId), eq(meals.userId, userId)));
+}

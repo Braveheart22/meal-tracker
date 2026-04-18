@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { updateMealWithItems } from "@/data/meals";
+import { updateMealWithItems, addFoodItemToMeal, deleteFoodItemFromMeal, updateMealMeta } from "@/data/meals";
 import { revalidatePath } from "next/cache";
 
 const LOOSE_UUID = /^[0-9a-f-]{36}$/i;
@@ -31,6 +31,84 @@ export type UpdateMealInput = z.infer<typeof updateMealSchema>;
 export type UpdateMealResult =
   | { ok: true; redirectTo: string }
   | { ok: false; error: string };
+
+const addFoodItemSchema = z.object({
+  mealId: z.string().regex(LOOSE_UUID),
+  name: z.string().min(1),
+  quantity: z.number().positive(),
+  unit: z.string().min(1),
+  calories: z.number().nonnegative().nullable(),
+  protein: z.number().nonnegative().nullable(),
+  carbs: z.number().nonnegative().nullable(),
+  fat: z.number().nonnegative().nullable(),
+});
+
+export type AddFoodItemInput = z.infer<typeof addFoodItemSchema>;
+export type AddFoodItemResult = { ok: true } | { ok: false; error: string };
+
+export async function addFoodItemAction(data: AddFoodItemInput): Promise<AddFoodItemResult> {
+  try {
+    const parsed = addFoodItemSchema.parse(data);
+    await addFoodItemToMeal(parsed.mealId, {
+      name: parsed.name,
+      quantity: parsed.quantity,
+      unit: parsed.unit,
+      calories: parsed.calories,
+      protein: parsed.protein,
+      carbs: parsed.carbs,
+      fat: parsed.fat,
+    });
+    revalidatePath(`/dashboard/meals/${parsed.mealId}`);
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (err) {
+    console.error("[addFoodItemAction]", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+const deleteFoodItemSchema = z.object({
+  mealId: z.string().regex(LOOSE_UUID),
+  foodItemId: z.string().regex(LOOSE_UUID),
+});
+
+export type DeleteFoodItemInput = z.infer<typeof deleteFoodItemSchema>;
+export type DeleteFoodItemResult = { ok: true } | { ok: false; error: string };
+
+export async function deleteFoodItemAction(data: DeleteFoodItemInput): Promise<DeleteFoodItemResult> {
+  try {
+    const parsed = deleteFoodItemSchema.parse(data);
+    await deleteFoodItemFromMeal(parsed.mealId, parsed.foodItemId);
+    revalidatePath(`/dashboard/meals/${parsed.mealId}`);
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (err) {
+    console.error("[deleteFoodItemAction]", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
+
+const updateMealMetaSchema = z.object({
+  mealId: z.string().regex(LOOSE_UUID),
+  name: z.string().min(1),
+  loggedAt: z.string().regex(LOCAL_DATETIME),
+});
+
+export type UpdateMealMetaInput = z.infer<typeof updateMealMetaSchema>;
+export type UpdateMealMetaResult = { ok: true } | { ok: false; error: string };
+
+export async function updateMealMetaAction(data: UpdateMealMetaInput): Promise<UpdateMealMetaResult> {
+  try {
+    const parsed = updateMealMetaSchema.parse(data);
+    await updateMealMeta(parsed.mealId, { name: parsed.name, loggedAt: new Date(parsed.loggedAt + "Z") });
+    revalidatePath(`/dashboard/meals/${parsed.mealId}`);
+    revalidatePath("/dashboard");
+    return { ok: true };
+  } catch (err) {
+    console.error("[updateMealMetaAction]", err);
+    return { ok: false, error: "Something went wrong. Please try again." };
+  }
+}
 
 export async function updateMealAction(data: UpdateMealInput): Promise<UpdateMealResult> {
   try {
