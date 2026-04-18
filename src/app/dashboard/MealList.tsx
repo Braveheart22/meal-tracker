@@ -8,6 +8,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import type { MealWithCalories } from "@/data/meals";
@@ -66,7 +67,7 @@ export function MealList({ meals, selectedDate }: MealListProps) {
               {meals.map((meal, index) => (
                 <li key={meal.id}>
                   {index > 0 && <Separator />}
-                  <div className="flex items-center justify-between px-6 py-4">
+                  <Link href={`/dashboard/meals/${meal.id}`} className="flex items-center justify-between px-6 py-4 hover:bg-muted/50 transition-colors">
                     <div>
                       <p className="font-medium">{meal.name ?? "Untitled meal"}</p>
                       <p className="text-sm text-muted-foreground">
@@ -78,7 +79,7 @@ export function MealList({ meals, selectedDate }: MealListProps) {
                         {Math.round(meal.totalCalories)} kcal
                       </span>
                     )}
-                  </div>
+                  </Link>
                 </li>
               ))}
             </ul>
