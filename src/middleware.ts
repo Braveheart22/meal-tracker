@@ -7,7 +7,7 @@ export default clerkMiddleware(async (auth, req) => {
 
   if (!userId && isDashboard) {
     const signInUrl = new URL('/sign-in', req.url)
-    signInUrl.searchParams.set('redirect_url', req.url)
+    signInUrl.searchParams.set('redirect_url', req.nextUrl.pathname)
     return NextResponse.redirect(signInUrl)
   }
 

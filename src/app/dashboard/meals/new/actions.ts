@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { addMeal, addFoodItemToMeal } from "@/data/meals";
+import { createMealWithItems } from "@/data/meals";
 import { revalidatePath } from "next/cache";
 
 const foodItemSchema = z.object({
@@ -16,7 +16,10 @@ const foodItemSchema = z.object({
 
 const createMealSchema = z.object({
   name: z.string().min(1),
-  loggedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/),
+  loggedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/).refine(
+    (s) => !isNaN(new Date(s + "Z").getTime()),
+    { message: "Invalid date/time value" }
+  ),
   foodItems: z.array(foodItemSchema).min(1, "Add at least one food item"),
 });
 
@@ -30,11 +33,10 @@ export async function createMealAction(data: CreateMealInput): Promise<CreateMea
   try {
     const parsed = createMealSchema.parse(data);
 
-    const meal = await addMeal({ name: parsed.name, loggedAt: new Date(parsed.loggedAt + "Z") });
-
-    for (const item of parsed.foodItems) {
-      await addFoodItemToMeal(meal.id, item);
-    }
+    await createMealWithItems(
+      { name: parsed.name, loggedAt: new Date(parsed.loggedAt + "Z") },
+      parsed.foodItems
+    );
 
     revalidatePath("/dashboard");
     return { ok: true, redirectTo: `/dashboard?date=${parsed.loggedAt.split("T")[0]}` };

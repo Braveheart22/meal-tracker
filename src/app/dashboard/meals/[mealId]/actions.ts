@@ -6,6 +6,11 @@ import { revalidatePath } from "next/cache";
 
 const LOOSE_UUID = /^[0-9a-f-]{36}$/i;
 const LOCAL_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
+const validLocalDatetime = (s: string) => !isNaN(new Date(s + "Z").getTime());
+const localDatetimeField = z
+  .string()
+  .regex(LOCAL_DATETIME)
+  .refine(validLocalDatetime, { message: "Invalid date/time value" });
 
 const foodItemSchema = z.object({
   id: z.string().regex(LOOSE_UUID).nullable(),
@@ -21,7 +26,7 @@ const foodItemSchema = z.object({
 const updateMealSchema = z.object({
   mealId: z.string().regex(LOOSE_UUID),
   name: z.string().min(1),
-  loggedAt: z.string().regex(LOCAL_DATETIME),
+  loggedAt: localDatetimeField,
   foodItems: z.array(foodItemSchema).min(1, "Add at least one food item"),
   deletedFoodItemIds: z.array(z.string().regex(LOOSE_UUID)),
 });
@@ -91,7 +96,7 @@ export async function deleteFoodItemAction(data: DeleteFoodItemInput): Promise<D
 const updateMealMetaSchema = z.object({
   mealId: z.string().regex(LOOSE_UUID),
   name: z.string().min(1),
-  loggedAt: z.string().regex(LOCAL_DATETIME),
+  loggedAt: localDatetimeField,
 });
 
 export type UpdateMealMetaInput = z.infer<typeof updateMealMetaSchema>;

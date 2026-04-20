@@ -71,6 +71,33 @@ export async function addMeal(data: { name: string; loggedAt: Date }) {
   return meal;
 }
 
+export async function createMealWithItems(
+  mealData: { name: string; loggedAt: Date },
+  items: FoodItemData[]
+): Promise<{ id: string }> {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthenticated");
+
+  return await db.transaction(async (tx) => {
+    const [meal] = await tx
+      .insert(meals)
+      .values({ ...mealData, userId })
+      .returning({ id: meals.id });
+
+    if (!meal) throw new Error("Insert failed");
+
+    for (const item of items) {
+      const [foodItem] = await tx
+        .insert(foodItems)
+        .values({ ...item, mealId: meal.id })
+        .returning({ id: foodItems.id });
+      await tx.insert(mealFoodItems).values({ mealId: meal.id, foodItemId: foodItem.id, quantity: item.quantity });
+    }
+
+    return meal;
+  });
+}
+
 export type MealWithFoodItems = {
   id: string;
   name: string | null;
@@ -149,6 +176,17 @@ export async function updateMealWithItems(
       .where(and(eq(meals.id, mealId), eq(meals.userId, userId)));
     if (!meal) throw new Error("Meal not found");
 
+    if (itemUpdates.length > 0) {
+      const existingItems = await tx
+        .select({ id: foodItems.id })
+        .from(foodItems)
+        .where(eq(foodItems.mealId, mealId));
+      const validIds = new Set(existingItems.map((r) => r.id));
+      for (const { id } of itemUpdates) {
+        if (!validIds.has(id)) throw new Error("Invalid food item ID");
+      }
+    }
+
     await tx
       .update(meals)
       .set(mealData)
@@ -186,12 +224,14 @@ export async function addFoodItemToMeal(
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
-  const [meal] = await db.select().from(meals).where(and(eq(meals.id, mealId), eq(meals.userId, userId)));
-  if (!meal) throw new Error("Meal not found");
+  return await db.transaction(async (tx) => {
+    const [meal] = await tx.select().from(meals).where(and(eq(meals.id, mealId), eq(meals.userId, userId)));
+    if (!meal) throw new Error("Meal not found");
 
-  const [foodItem] = await db.insert(foodItems).values({ ...item, mealId }).returning({ id: foodItems.id });
-  await db.insert(mealFoodItems).values({ mealId, foodItemId: foodItem.id, quantity: item.quantity });
-  return foodItem;
+    const [foodItem] = await tx.insert(foodItems).values({ ...item, mealId }).returning({ id: foodItems.id });
+    await tx.insert(mealFoodItems).values({ mealId, foodItemId: foodItem.id, quantity: item.quantity });
+    return foodItem;
+  });
 }
 
 export async function deleteFoodItemFromMeal(mealId: string, foodItemId: string): Promise<void> {

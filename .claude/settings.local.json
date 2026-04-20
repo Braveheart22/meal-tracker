@@ -17,7 +17,8 @@
       "Bash(npm run *)",
       "Bash(node -e \"const n = require\\('next/package.json'\\); console.log\\(n.version\\)\")",
       "Bash(npm show *)",
-      "Bash(node -e \"const v=JSON.parse\\(require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\)\\); console.log\\(v.filter\\(x=>x.startsWith\\('15.'\\)\\).slice\\(-5\\).join\\('\\\\n'\\)\\)\")"
+      "Bash(node -e \"const v=JSON.parse\\(require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\)\\); console.log\\(v.filter\\(x=>x.startsWith\\('15.'\\)\\).slice\\(-5\\).join\\('\\\\n'\\)\\)\")",
+      "Bash(python C:/Users/luvme/.claude/skills/weekly-calorie-chart/scripts/weekly_calories_chart.py)"
     ]
   },
   "enabledMcpjsonServers": [
