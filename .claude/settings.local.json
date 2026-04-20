@@ -1,7 +1,26 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "mcp__neon__list_projects",
+      "mcp__neon__get_database_tables",
+      "mcp__neon__describe_table_schema",
+      "mcp__neon__run_sql_transaction",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(npx shadcn@latest add calendar popover card separator --yes)",
+      "Bash(npx shadcn *)",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(npm list *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"const n = require\\('next/package.json'\\); console.log\\(n.version\\)\")",
+      "Bash(npm show *)",
+      "Bash(node -e \"const v=JSON.parse\\(require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\)\\); console.log\\(v.filter\\(x=>x.startsWith\\('15.'\\)\\).slice\\(-5\\).join\\('\\\\n'\\)\\)\")"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "neon"
+  ]
 }

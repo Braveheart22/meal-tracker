@@ -67,6 +67,7 @@ export async function addMeal(data: { name: string; loggedAt: Date }) {
     .values({ ...data, userId })
     .returning({ id: meals.id });
 
+  if (!meal) throw new Error("Insert failed");
   return meal;
 }
 
@@ -90,33 +91,35 @@ export async function getMealById(mealId: string): Promise<MealWithFoodItems | n
   const { userId } = await auth();
   if (!userId) throw new Error("Unauthenticated");
 
-  const [meal] = await db
-    .select()
-    .from(meals)
-    .where(and(eq(meals.id, mealId), eq(meals.userId, userId)));
+  return await db.transaction(async (tx) => {
+    const [meal] = await tx
+      .select()
+      .from(meals)
+      .where(and(eq(meals.id, mealId), eq(meals.userId, userId)));
 
-  if (!meal) return null;
+    if (!meal) return null;
 
-  const items = await db
-    .select()
-    .from(foodItems)
-    .where(eq(foodItems.mealId, mealId));
+    const items = await tx
+      .select()
+      .from(foodItems)
+      .where(eq(foodItems.mealId, mealId));
 
-  return {
-    id: meal.id,
-    name: meal.name,
-    loggedAt: meal.loggedAt,
-    foodItems: items.map((fi) => ({
-      id: fi.id,
-      name: fi.name,
-      quantity: fi.quantity,
-      unit: fi.unit,
-      calories: fi.calories ?? null,
-      protein: fi.protein ?? null,
-      carbs: fi.carbs ?? null,
-      fat: fi.fat ?? null,
-    })),
-  };
+    return {
+      id: meal.id,
+      name: meal.name,
+      loggedAt: meal.loggedAt,
+      foodItems: items.map((fi) => ({
+        id: fi.id,
+        name: fi.name,
+        quantity: fi.quantity,
+        unit: fi.unit,
+        calories: fi.calories ?? null,
+        protein: fi.protein ?? null,
+        carbs: fi.carbs ?? null,
+        fat: fi.fat ?? null,
+      })),
+    };
+  });
 }
 
 type FoodItemData = {
@@ -149,7 +152,7 @@ export async function updateMealWithItems(
     await tx
       .update(meals)
       .set(mealData)
-      .where(eq(meals.id, mealId));
+      .where(and(eq(meals.id, mealId), eq(meals.userId, userId)));
 
     for (const id of deletedFoodItemIds) {
       await tx.delete(foodItems).where(and(eq(foodItems.id, id), eq(foodItems.mealId, mealId)));

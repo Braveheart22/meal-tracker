@@ -51,8 +51,8 @@ export default function RootLayout({
             </header>
             {children}
           </ClerkProvider>
+          <Toaster position="bottom-right" />
         </ThemeProvider>
-        <Toaster position="bottom-right" />
       </body>
     </html>
   );
